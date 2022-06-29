@@ -56,4 +56,35 @@ the installation of `solidity`.
 The output of this contains the function `DeployMaltcoin`, which deploys the smart contract to the 
 blockchain.
 
+### Deployment using go-ethereum
+- private Key exportieren
+- deploy-Methode aufrufen
+- Gas, etc. definieren
+- contract adresse als Rückgabewerte
 
+To deploy the token contract, an account is needed. During the 
+initialization of the Evmos node with the `./init.sh` script, 
+an initial account was created and supplied with a specific amount 
+of tokens. 
+Manually, an account can be added using the `keys` command.
+
+```shell
+ >  evmosd keys add $KEYNAME
+```
+
+The available accounts can be queried with the following instructions:
+
+```shell
+ > evmosd keys list
+```
+
+This will print the account list to the terminal output and display 
+additional information like the account address and public key.
+
+In order to be able to sign the transaction, which deploys the smart
+contract, the private key is needed. It can be exported using: 
+
+```shell
+ > evmosd keys unsafe-export-eth-key $KEYNAME --keyring-backend test
+693F03A42E6F377D2305CB036EAE9BACCC09B230041CC786252A3BD5C34ED0FA
+```
