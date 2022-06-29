@@ -41,8 +41,8 @@ the Solidity compiler. We create the `.abi` as well as `.bin` files, which are
 necessary to deploy and interact with the smart contracts.
 
 ```shell
- > solc --abi Maltcoin.sol -o build
- > solc --bin Maltcoin.sol -o build
+ > solc --abi contracts/Maltcoin.sol -o contracts/build
+ > solc --bin contracts/Maltcoin.sol -o contracts/build
 ```
 
 These commands create the mentioned files in the subfolder `build`. Next, the
@@ -57,10 +57,6 @@ The output of this contains the function `DeployMaltcoin`, which deploys the sma
 blockchain.
 
 ### Deployment using go-ethereum
-- private Key exportieren
-- deploy-Methode aufrufen
-- Gas, etc. definieren
-- contract adresse als Rückgabewerte
 
 To deploy the token contract, an account is needed. During the 
 initialization of the Evmos node with the `./init.sh` script, 
@@ -79,10 +75,11 @@ The available accounts can be queried with the following instructions:
 ```
 
 This will print the account list to the terminal output and display 
-additional information like the account address and public key.
+information like the account name, address and public key.
 
 In order to be able to sign the transaction, which deploys the smart
-contract, the private key is needed. It can be exported using: 
+contract, the private key is needed. It can be exported for a given `$KEYNAME` 
+using: 
 
 ```shell
  > evmosd keys unsafe-export-eth-key $KEYNAME --keyring-backend test
