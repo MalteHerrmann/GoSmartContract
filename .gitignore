@@ -1,0 +1,8 @@
+# Node modules
+node_modules
+
+# Solidity build files
+contracts/build
+
+# File to collect ideas, to-dos, etc.
+Ideas.md
