@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"os"
 
 	maltcoin "github.com/MalteHerrmann/GoSmartContract/contracts/build"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -18,7 +19,7 @@ import (
 
 func main() {
 	// Print a description
-	fmt.Println("\n-----------------------------------------------------")
+	fmt.Println("\ndeploy_contract.go\n-----------------------------------------------------")
 	fmt.Printf("This script deploys a contract to a local Evmos node.\n\n")
 
 	// Use ethclient to connect to local Evmos node on port 8545
@@ -43,7 +44,11 @@ func main() {
 	fmt.Println("Suggested gas price:", gasPrice)
 
 	// Define private key, which is needed to sign transactions
-	ecdsaPrivateKey, err := crypto.HexToECDSA("693F03A42E6F377D2305CB036EAE9BACCC09B230041CC786252A3BD5C34ED0FA")
+	// privateKey := "693F03A42E6F377D2305CB036EAE9BACCC09B230041CC786252A3BD5C34ED0FA"
+	privateKey := os.Args[1]
+
+	// Get ecdsa representation of private key
+	ecdsaPrivateKey, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,7 +71,7 @@ func main() {
 		log.Fatal(err)
 	}
 	auth.Nonce = big.NewInt(int64(nonce))
-	auth.GasLimit = 223372036854775807 // TODO: for some reason gas limit is always reached
+	auth.GasLimit = 1000000 // TODO: for some reason gas limit is always reached
 	auth.GasPrice = gasPrice
 	auth.Value = big.NewInt(0)
 

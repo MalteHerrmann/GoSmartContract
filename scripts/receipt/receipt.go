@@ -1,9 +1,17 @@
+// receipt.go
+//
+// This script prints information from the transaction receipt.
+// Script must be called with a transaction argument as input.
+//
+// Example:
+// go run receipt.go $TXHASH
 package main
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -11,7 +19,7 @@ import (
 
 func main() {
 	// Print a description
-	fmt.Println("\n-----------------------------------------------------")
+	fmt.Println("\nreceipt.go\n-----------------------------------------------------")
 	fmt.Printf("This script prints information from the transaction receipt\ngiven a valid transaction hash.\n\n")
 
 	// Use ethclient to connect to local Evmos node on port 8545
@@ -22,7 +30,9 @@ func main() {
 	fmt.Println("Connected to local Evmos node on Port 8545.")
 
 	// Define transaction hash, for which the receipt should be returned
-	txHash := common.HexToHash("0xab693c5de3f831adcfe81032004b1f07ee5b13ac0e847f18010a7b0907750569")
+	// txHashHex := "0x900c0aa59e57327bcf26221b77c6904466c54f0b08918d99a3c838c233d13126"
+	txHashHex := os.Args[1]
+	txHash := common.HexToHash(txHashHex)
 
 	// Get transaction receipt using the client and transaction hash
 	receipt, err := client.TransactionReceipt(context.Background(), txHash)
@@ -35,13 +45,10 @@ func main() {
 	fmt.Println("Status:           ", receipt.Status)
 	fmt.Println("Gas used:         ", receipt.GasUsed)
 
-	// Define contract address
-	contractAddress := common.HexToAddress("0xFc3e94E429Bf36099d235b421ec770eB9AFb3b7F")
-
 	// Get the code stored at the contract address
-	code, err := client.CodeAt(context.Background(), contractAddress, nil)
+	code, err := client.CodeAt(context.Background(), receipt.ContractAddress, nil)
 	if err != nil {
 		log.Fatalf("Failed to retrieve code: %v\n", err)
 	}
-	fmt.Println("Code at address: ", code)
+	fmt.Println("Length of code at contract address: ", len(code))
 }
