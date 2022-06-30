@@ -4,20 +4,42 @@ The deployment of the ERC20 token contract cannot be completed, because
 the gas limit for the transaction is reached, no matter what the value is set 
 to. 
 
-1. Clone repo
-2. npm install
-3. Reproduce ERC20 problem with `'./reproduce_problem.sh'` script
-4. Run test suite `'tests/maltcoin_test.go'` -> fails
-5. Successfully deploy simpler contract with `'./init.sh'` script
-6. Run test suite `'tests/maltcoin_test.go'` -> passes
+1. Clone repo <br>`gh repo clone MalteHerrmann/GoSmartContract`
+2. Start local Evmos node <br> `evmosd start`
+3. Install OpenZeppelin contracts <br> `npm install`
+4. Reproduce ERC20 problem <br>`./reproduce_problem.sh` 
+5. Run test suite <br> `go test tests/maltcoin_test.go` -> fails with `contract creation code storage out of gas` error
+6. Successfully deploy simpler contract <br> `./init.sh` 
+7. Run test suite <br> `go test tests/maltcoin_test.go` -> passes
 
 ## Description
 I have stripped the ERC20 contract (`Maltcoin.sol`) down to the bare minimum implementation 
-of an OpenZeppelin contract, that can be generated with https://wizard.openzeppelin.com/, and tested it with [Remix](https://remix.ethereum.org/). The compilation and deployment works fine in Remix and fails using `go-ethereum`. However, no error is thrown by the deployment function. The problem shows itself, when trying to call the contract functions, e.g. `maltcoin.Name(nil)`. 
+of an OpenZeppelin contract, that can be generated with https://wizard.openzeppelin.com/, 
+and tested it with [Remix](https://remix.ethereum.org/). The compilation and deployment 
+works fine in Remix and fails using `go-ethereum`. However, no error is thrown by the 
+deployment function. The problem shows itself, when trying to call the contract functions, 
+e.g. `maltcoin.Name(nil)`. The transaction status in the transaction receipt is `0` and the 
+code at the `receipt.ContractAddress` is empty.
 
-On the other hand, a simple Solidity contract (`Maltcoin_temp.sol`) can be deployed with the same Go functions, `solc` and `abigen` commands. Therefore, the problem is most likely in importing the ERC20 base contract from OpenZeppelin.
+```
+Status:                             0
+Gas used:                           1000000              // == gasLimit
+Length of code at contract address: 0
+```
 
-There are encounters of this error in some ressources online, but some were either solved with a higher gas limit, which didn't help in this case, or were solved after commiting the transaction, which is not the problem either:
+On the other hand, a simple Solidity contract (`Maltcoin_temp.sol`) can be deployed with the 
+same Go functions, `solc` and `abigen` commands. Therefore, the problem is most likely in 
+importing the ERC20 base contract from OpenZeppelin.
+
+```
+Status:                             1
+Gas used:                           500000
+Length of code at contract address: 557
+```
+
+There are encounters of this error in some ressources online, but some were either solved 
+with a higher gas limit, which didn't help in this case, or were solved after commiting 
+the transaction, which is not the problem either:
 - https://github.com/ethereum/go-ethereum/issues/20636
 - https://github.com/ethereum/go-ethereum/issues/15930
 - https://ethereum.stackexchange.com/questions/68706/no-contract-code-at-give-address
@@ -40,7 +62,8 @@ When testing with a simulated backend (`tests/maltcoin_test.go`), an error trace
 FAIL
 ```
 
-However, when compiling the simpler `Maltcoin_temp.sol` by executing `./init.sh`, and running the test suite, all tests pass:
+However, when compiling the simpler `Maltcoin_temp.sol` by executing `./init.sh`, and running 
+the test suite, all tests pass:
 ```shell
  > ./init.sh
 ...
