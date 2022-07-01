@@ -74,3 +74,9 @@ ok      command-line-arguments  0.185s
 
 This shows, that the test suite itself is set up correctly.
 
+## Solution
+
+The solution was to estimate the necessary gas limit using `client.EstimateGas(...)` instead of 
+manually setting a value. Interestingly, even when manually setting a value considerably higher than the estimated gas,
+the transaction does not deploy the code correctly, stating it runs out of gas.
+

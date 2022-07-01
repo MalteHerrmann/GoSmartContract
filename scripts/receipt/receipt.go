@@ -44,6 +44,7 @@ func main() {
 	fmt.Println("Contract address: ", receipt.ContractAddress)
 	fmt.Println("Status:           ", receipt.Status)
 	fmt.Println("Gas used:         ", receipt.GasUsed)
+	fmt.Println("Logs:             ", receipt.Logs)
 
 	// Get the code stored at the contract address
 	code, err := client.CodeAt(context.Background(), receipt.ContractAddress, nil)
