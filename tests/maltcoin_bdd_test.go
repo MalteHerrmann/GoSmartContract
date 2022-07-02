@@ -74,6 +74,29 @@ func TestMaltcoin(t *testing.T) {
 	RunSpecs(t, "Maltcoin Suite")
 }
 
+var _ = Describe("Token approve", func() {
+	BeforeEach(func() {
+		s.SetupTest()
+	})
+
+	Context("When approving a transaction amount", Ordered, func() {
+		It("should have added the amount to the allowance of the recipient address", func() {
+			// Define approved amount
+			amount := util.Ten18
+
+			// Approve tokens from account1 to account2
+			_, err := s.contract.Approve(s.auth, s.addresses[1], amount)
+			Expect(err).To(BeNil())
+
+			// Commit transaction
+			s.client.Commit()
+
+			allowance, err := s.contract.Allowance(nil, s.addresses[0], s.addresses[1])
+			Expect(allowance.Cmp(amount), err).To(Equal(0))
+		})
+	})
+})
+
 var _ = Describe("Token balance", Ordered, func() {
 	BeforeEach(func() {
 		s.SetupTest()
