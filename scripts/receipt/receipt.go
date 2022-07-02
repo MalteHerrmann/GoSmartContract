@@ -42,7 +42,7 @@ func main() {
 	fmt.Println("Logs:             ", receipt.Logs)
 
 	// Get the code stored at the contract address
-	if (receipt.ContractAddress == common.Address{}) {
+	if (receipt.ContractAddress != common.Address{}) {
 		code, err := client.CodeAt(context.Background(), receipt.ContractAddress, nil)
 		if err != nil {
 			log.Fatalf("Failed to retrieve code: %v\n", err)
