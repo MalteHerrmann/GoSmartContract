@@ -14,6 +14,44 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestTokenBalance tests querying the token balance for accounts
+// of the Maltcoin smart contract.
+//
+// It creates two private keys with the corresponding addresses, which
+// are used to transfer tokens.
+// An instance of the Maltcoin smart contract is deployed on a simulated
+// backend, so one of the accounts should have the initial deployer balance,
+// which is 10000 MALT and the other should have 0.
+func TestTokenBalance(t *testing.T) {
+	// Generate testing accounts
+	privKeys, addresses, err := util.GeneratePrivKeysAndAddresses(2)
+	if err != nil {
+		log.Fatalf("Error generating private key: %v\n", err)
+	}
+
+	// Get simulated backend and transaction signer for testing
+	client, auth, err := util.GetSimulatedClientAndTransactionSigner(privKeys[0], util.MaxGasPerBlock, util.TestChainID)
+	require.NoError(t, err, "Error getting client and transaction signer")
+
+	// Deploy contract
+	_, _, contract, err := util.DeployContractAndCommit(auth, client)
+	require.NoError(t, err, "Could not deploy contract")
+
+	// Define 10000 * 10^18 as a big integer.
+	initialDeployerBalance := new(big.Int).Mul(big.NewInt(10000), util.Ten18)
+
+	// Check maltcoin token balance of account1
+	// This account deployed the contract, so it should have the initial deployer token balance.
+	balance, err := contract.BalanceOf(nil, addresses[0])
+	require.NoError(t, err, "Could not retrieve balance of deployer account")
+	require.Equal(t, initialDeployerBalance, balance, "Wrong balance of deployer account")
+
+	// Get balance of account2
+	balance, err = contract.BalanceOf(nil, addresses[1])
+	require.NoError(t, err, "Could not retrieve balance of account2")
+	require.Equal(t, int64(0), balance.Int64(), "Wrong balance of account2")
+}
+
 // TestTokenTransfer tests the token transfer of the Maltcoin smart contract.
 //
 // It creates two private keys with the corresponding addresses, which
@@ -41,17 +79,6 @@ func TestTokenTransfer(t *testing.T) {
 	// This is 10000 * 10^18 in this case.
 	initialDeployerBalance := new(big.Int).Mul(big.NewInt(10000), util.Ten18)
 
-	// Check maltcoin token balance of account1
-	// This account deployed the contract, so it should have the initial deployer token balance.
-	balance, err := contract.BalanceOf(nil, addresses[0])
-	require.NoError(t, err, "Could not retrieve balance of sender account before transfer")
-	require.Equal(t, initialDeployerBalance, balance, "Wrong balance of sender account before transfer")
-
-	// Get balance of account2
-	balance, err = contract.BalanceOf(nil, addresses[1])
-	require.NoError(t, err, "Could not retrieve balance of account2 before transfer")
-	require.Equal(t, int64(0), balance.Int64(), "Wrong balance of account2 before transfer")
-
 	// Transfer tokens from account1 to account2
 	amount := util.Ten18
 	_, err = contract.Transfer(auth, addresses[1], amount)
@@ -59,7 +86,7 @@ func TestTokenTransfer(t *testing.T) {
 	client.Commit()
 
 	// Check if transfer was successful
-	balance, err = contract.BalanceOf(nil, addresses[0])
+	balance, err := contract.BalanceOf(nil, addresses[0])
 	require.NoError(t, err, "Could not retrieve balance of sender account after transfer")
 	require.Equal(t, new(big.Int).Sub(initialDeployerBalance, amount), balance, "Wrong balance of sender account after transfer")
 
