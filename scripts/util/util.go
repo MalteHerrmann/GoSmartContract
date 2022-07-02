@@ -8,7 +8,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"os"
 
 	maltcoin "github.com/MalteHerrmann/GoSmartContract/contracts/build"
 	"github.com/ethereum/go-ethereum"
@@ -40,6 +39,22 @@ var (
 	// Defines the max gas per block for the simulated backend
 	MaxGasPerBlock = uint64(5000000)
 )
+
+// TODO: hier noch refactoren mit ClientOpts als Parameter an GetClient()?
+//       Oder geht das wegen den Return-werten nicht?
+// ClientOpts is a struct, that contains the necessary fields to
+// configure the go-ethereum client.
+type ClientOpts struct {
+	Simulated bool
+	URL       string
+	ChainID   *big.Int
+}
+
+// TODO: Backend interface definieren?
+type Backend interface {
+	*backends.SimulatedBackend | *ethclient.Client
+	TransactionReceipt()
+}
 
 // DeployContractAndCommit deploys an instance of the ERC20 token contract
 // and commits the transaction to the simulated backend.
@@ -171,9 +186,26 @@ func GeneratePrivKeysAndAddresses(n uint64) ([]*ecdsa.PrivateKey, []common.Addre
 
 // GetReceipt converts a given transaction hash in hex string format and
 // returns the transaction receipt, if the hash is valid.
+// TODO: Try generics to join this function with GetReceiptSimulated
+// func GetReceipt[backend *ethclient.Client | *backends.SimulatedBackend](client backend, txHashHex string) (*types.Receipt, error) {
 func GetReceipt(client *ethclient.Client, txHashHex string) (*types.Receipt, error) {
 	// Convert transaction hash, for which the receipt should be returned
-	txHash := common.HexToHash(os.Args[1])
+	txHash := common.HexToHash(txHashHex)
+
+	// Get transaction receipt
+	receipt, err := client.TransactionReceipt(context.Background(), txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return receipt, nil
+}
+
+// GetReceiptSimulated converts a given transaction hash in hex string format and
+// returns the transaction receipt, if the hash is valid.
+func GetReceiptSimulated(client *backends.SimulatedBackend, txHashHex string) (*types.Receipt, error) {
+	// Convert transaction hash, for which the receipt should be returned
+	txHash := common.HexToHash(txHashHex)
 
 	// Get transaction receipt
 	receipt, err := client.TransactionReceipt(context.Background(), txHash)
