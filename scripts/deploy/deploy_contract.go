@@ -2,106 +2,64 @@
 // contract a local Evmos node.
 // It uses the go implementation of a Solidity contract, that
 // was generated using the Solidity compiler and abigen.
+//
+// It must be called with the private key in hex format, that
+// which will be used to deploy the contract.
+//
+// Usage:
+//
+// $ go run deploy_contract.go $PRIVKEY
+//
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 
 	maltcoin "github.com/MalteHerrmann/GoSmartContract/contracts/build"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/MalteHerrmann/GoSmartContract/scripts/util"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 func main() {
-	// Print a description
-	fmt.Println("\ndeploy_contract.go\n-----------------------------------------------------")
-	fmt.Printf("This script deploys a contract to a local Evmos node.\n\n")
-
-	// Use ethclient to connect to local Evmos node on port 8545
-	client, err := ethclient.Dial("http://localhost:8545")
+	// Get ecdsa representation of private key, which is given as the first
+	// command line argument.
+	privKey, err := crypto.HexToECDSA(os.Args[1])
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error while converting the private key to ecdsa: %v", err)
 	}
-	fmt.Println("Connected to local Evmos node on Port 8545.")
 
-	// Get chain id from client
-	chainID, err := client.ChainID(context.Background())
+	// Define data that should be executed
+	callData := common.FromHex(maltcoin.MaltcoinMetaData.Bin)
+
+	// Connect to local EVM and return the client plus a transaction signer,
+	// that can be used to deploy the contract.
+	client, auth, err := util.GetClientAndTransactionSigner(privKey)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error while connecting to the local node and getting the transaction signer: %v", err)
 	}
-	fmt.Println("Chain ID:", chainID)
 
-	// Get gas price suggestion from client
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+	// Fill transaction signer fields for this specific transaction
+	auth, err = util.FillTransactionSignerFields(auth, client, callData)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error while filling transaction signer fields: %v", err)
 	}
-	fmt.Println("Suggested gas price:", gasPrice)
-
-	// Define private key, which is needed to sign transactions
-	privateKey := os.Args[1]
-
-	// Get ecdsa representation of private key
-	ecdsaPrivateKey, err := crypto.HexToECDSA(privateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Get address from ecdsa key
-	deployerAddress := crypto.PubkeyToAddress(ecdsaPrivateKey.PublicKey)
-	fmt.Println("Deployer address:", deployerAddress)
-
-	// Get current nonce for deployer address
-	nonce, err := client.PendingNonceAt(context.Background(), deployerAddress)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Current nonce: ", nonce)
-
-	// Define ethereum call message for contract deployment
-	callMsg := ethereum.CallMsg{
-		From:     deployerAddress,
-		To:       nil,
-		GasPrice: gasPrice,
-		Data:     common.FromHex(maltcoin.MaltcoinMetaData.Bin),
-	}
-
-	// Estimate gas usage
-	gasLimit, err := client.EstimateGas(context.Background(), callMsg)
-	if err != nil {
-		// log.Fatalf("Failed to estimate gas: %v\n", err)
-		fmt.Printf("Failed to estimate gas: %v\n", err)
-	} else {
-		fmt.Println("Estimated gas:", gasLimit)
-	}
-
-	// Define transaction signer from private key and chain id and configure
-	// the transaction options
-	auth, err := bind.NewKeyedTransactorWithChainID(ecdsaPrivateKey, chainID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	auth.Nonce = big.NewInt(int64(nonce))
-	// auth.GasLimit = 18446744073709551615 // max value for uint64
-	// auth.GasLimit = 10000000000
-	// auth.GasLimit = 11903790 // value worked
-	auth.GasLimit = gasLimit
-	auth.GasPrice = gasPrice
-	auth.Value = big.NewInt(0)
 
 	// Deploy the contract
 	contractAddress, tx, _, err := maltcoin.DeployMaltcoin(auth, client)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error while deploying the token contract: %v", err)
 	}
 
+	// Print information into terminal output
+	fmt.Println("\ndeploy_contract.go\n-----------------------------------------------------")
+	fmt.Printf("This script deploys a contract to a local Evmos node.\n\n")
+	fmt.Println("Connected to local Evmos node on Port 8545.")
+	fmt.Println("Current nonce: ", auth.Nonce)
+	fmt.Println("Estimated gas:", auth.GasLimit)
+	fmt.Println("Suggested gas price:", auth.GasPrice)
 	fmt.Println("\n*********** Success ***********")
 	fmt.Println("The token contract was deployed in transaction ", tx.Hash().Hex())
 	fmt.Println("The contract address is ", contractAddress)
