@@ -1,4 +1,4 @@
-// QueryAndTransfer.go
+// query_and_transfer.go
 //
 // This script queries the MaltCoin token balance of an account
 // and transfer some tokens to another account
@@ -6,6 +6,7 @@
 // The script has to be called with the following arguments
 //
 // go run query_and_transfer.go $CONTRACT_ADDRESS $SENDER_PRIVKEY $RECIPIENT_ADDRESS $AMOUNT
+//
 package main
 
 import (
