@@ -4,13 +4,13 @@ The deployment of the ERC20 token contract cannot be completed, because
 the gas limit for the transaction is reached, no matter what the value is set 
 to. 
 
-1. Clone repo <br>`gh repo clone MalteHerrmann/GoSmartContract`
-2. Start local Evmos node <br> `evmosd start`
-3. Install OpenZeppelin contracts <br> `npm install`
-4. Reproduce ERC20 problem <br>`./reproduce_problem.sh` 
-5. Run test suite <br> `go test tests/maltcoin_test.go` -> fails with `contract creation code storage out of gas` error
-6. Successfully deploy simpler contract <br> `./init.sh` 
-7. Run test suite <br> `go test tests/maltcoin_test.go` -> passes
+1. Clone repo <br>`$ gh repo clone MalteHerrmann/GoSmartContract`
+2. Start local Evmos node <br> `$ evmosd start`
+3. Install OpenZeppelin contracts <br> `$ npm install`
+4. Reproduce ERC20 problem <br>`$ ./reproduce_problem.sh` 
+5. Run test suite <br> `$ go test tests/maltcoin_test.go` -> fails with `contract creation code storage out of gas` error
+6. Successfully deploy simpler contract <br> `$ ./init.sh` 
+7. Run test suite <br> `$ go test tests/maltcoin_test.go` -> passes
 
 ## Description
 I have stripped the ERC20 contract (`Maltcoin.sol`) down to the bare minimum implementation 
@@ -48,10 +48,10 @@ the transaction, which is not the problem either:
 ## Testing
 When testing with a simulated backend (`tests/maltcoin_test.go`), an error trace shows this too: 
 ```shell
- > ./reproduce_problem.sh
+ $ ./reproduce_problem.sh
 ...
 
- > go test tests/maltcoin_test.go 
+ $ go test tests/maltcoin_test.go 
 --- FAIL: TestMaltcoin (0.00s)
     maltcoin_test.go:49: 
                 Error Trace:    /Users/malte/dev/go/GoSmartContract/tests/maltcoin_test.go:49
@@ -65,10 +65,10 @@ FAIL
 However, when compiling the simpler `Maltcoin_temp.sol` by executing `./init.sh`, and running 
 the test suite, all tests pass:
 ```shell
- > ./init.sh
+ $ ./init.sh
 ...
 
- > go test tests/maltcoin_test.go
+ $ go test tests/maltcoin_test.go
 ok      command-line-arguments  0.185s
 ```
 

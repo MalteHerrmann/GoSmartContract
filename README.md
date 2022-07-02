@@ -5,7 +5,7 @@ In this repo, an ERC20 token smart contract is deployed to a local Evmos node.
 The following software has to be installed on your machine in order to use the 
 latest version of Evmos (currently v5.0.0):
 - Go v1.18+ (https://go.dev/)
-- Solidity compiler (https://docs.soliditylang.org/en/v0.8.15/)
+- Solidity compiler (https://docs.soliditylang.org/en/v0.8.15/installing-solidity.html#macos-packages)
 - Evmos Daemon (https://docs.evmos.org/validators/quickstart/installation.html)
 
 ## Evmos Node
@@ -41,8 +41,8 @@ the Solidity compiler. We create the `.abi` as well as `.bin` files, which are
 necessary to deploy and interact with the smart contracts.
 
 ```shell
- > solc --abi contracts/Maltcoin.sol -o contracts/build
- > solc --bin contracts/Maltcoin.sol -o contracts/build
+ $ solc --abi contracts/Maltcoin.sol -o contracts/build
+ $ solc --bin contracts/Maltcoin.sol -o contracts/build
 ```
 
 These commands create the mentioned files in the subfolder `build`. Next, the
@@ -50,7 +50,7 @@ Go implementation of the contract is generated using `abigen`, which comes with
 the installation of `solidity`.
 
 ```shell
- > abigen --bin=contracts/build/Maltcoin.bin --abi=contracts/build/Maltcoin.abi --pkg=maltcoin --out=contracts/build/Maltcoin.go
+ $ abigen --bin=contracts/build/Maltcoin.bin --abi=contracts/build/Maltcoin.abi --pkg=maltcoin --out=contracts/build/Maltcoin.go
 ```
 
 The output of this contains the function `DeployMaltcoin`, which deploys the smart contract to the 
@@ -65,13 +65,13 @@ of tokens.
 Manually, an account can be added using the `keys` command.
 
 ```shell
- >  evmosd keys add $KEYNAME
+ $  evmosd keys add $KEYNAME
 ```
 
 The available accounts can be queried with the following instructions:
 
 ```shell
- > evmosd keys list
+ $ evmosd keys list
 ```
 
 This will print the account list to the terminal output and display 
@@ -82,6 +82,8 @@ contract, the private key is needed. It can be exported for a given `$KEYNAME`
 using: 
 
 ```shell
- > evmosd keys unsafe-export-eth-key $KEYNAME --keyring-backend test
+ $ evmosd keys unsafe-export-eth-key $KEYNAME --keyring-backend test
 693F03A42E6F377D2305CB036EAE9BACCC09B230041CC786252A3BD5C34ED0FA
 ```
+
+
