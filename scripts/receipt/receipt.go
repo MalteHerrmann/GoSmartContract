@@ -3,7 +3,7 @@
 //
 // Usage:
 //
-// $ go run receipt.go $TXHASH
+//  $ go run receipt.go $TXHASH
 //
 package main
 

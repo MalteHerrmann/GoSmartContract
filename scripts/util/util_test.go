@@ -10,9 +10,15 @@ import (
 	"testing"
 
 	maltcoin "github.com/MalteHerrmann/GoSmartContract/contracts/build"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	// Has to be adjusted for the tests with the running local node
+	testTxHashHex = "0xa9f7d8cb3a5a84c8740cd106c5334bdb13d09d4b81087a681fbc3ad2860dc557"
 )
 
 // TestDeployContractAndCommit tests wether the generated contract bindings
@@ -102,11 +108,56 @@ func TestFillTransactionSignerFields(t *testing.T) {
 			client, auth, err := GetClientAndTransactionSigner(privKey)
 			require.NoError(t, err, "Error getting client and transaction signer")
 
-			_, err = FillTransactionSignerFields(auth, client, tc.callData)
+			// Define call msg
+			msg := ethereum.CallMsg{
+				From: auth.From,
+				Data: tc.callData,
+			}
+
+			_, err = FillTransactionSignerFields(auth, client, msg)
 			if tc.expErr {
 				require.Error(t, err, "Error filling the transaction signer fields")
 			} else {
 				require.NoError(t, err, "Error filling the transaction signer fields")
+			}
+		})
+	}
+}
+
+// TestGetCallData tests if call data for an ethereum callMsg can
+// be correctly generated.
+func TestGetCallData(t *testing.T) {
+	testcases := []struct {
+		name       string
+		expErr     bool
+		methodName string
+		args       []interface{}
+	}{
+		{
+			"passes - transfer call",
+			false,
+			"transfer",
+			[]interface{}{
+				common.HexToAddress("0x1234567890123456789012345678901234567890"),
+				big.NewInt(1),
+			},
+		},
+		{
+			"fails - invalid method name",
+			true,
+			"InvalidMethodName",
+			[]interface{}{},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			callData, err := GetCallData(tc.methodName, tc.args...)
+			if tc.expErr {
+				require.Error(t, err, "Error getting call data")
+			} else {
+				require.NoError(t, err, "Error getting call data")
+				require.NotNil(t, callData, "Call data is nil")
 			}
 		})
 	}
@@ -123,6 +174,23 @@ func TestGetClient(t *testing.T) {
 	chainID, err := client.ChainID(context.Background())
 	require.NoError(t, err, "Error getting chain ID")
 	require.Equal(t, big.NewInt(9000), chainID, "Wrong chain ID")
+}
+
+// TestGetReceipt tests if the receipts of transactions can correctly
+// be retrieved using a connection to a local node.
+func TestGetReceipt(t *testing.T) {
+	// Get client
+	client, err := GetClient()
+	require.NoError(t, err, "Error getting client and transaction signer")
+
+	// Get receipt for valid transaction
+	receipt, err := GetReceipt(client, testTxHashHex)
+	require.NoError(t, err, "Error getting receipt")
+	require.Equal(t, receipt.Status, uint64(1), "Wrong receipt status")
+
+	// Get receipt for invalid transaction
+	_, err = GetReceipt(client, "0xabcdefg")
+	require.Error(t, err, "Invalid transaction hash should not return receipt")
 }
 
 // TestGetReceiptSimulated tests if the receipts of transactions can correctly

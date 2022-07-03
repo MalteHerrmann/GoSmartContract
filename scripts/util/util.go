@@ -21,9 +21,6 @@ import (
 )
 
 var (
-	// Defines 10^18 as a big integer
-	Ten18 = big.NewInt(1e18)
-
 	// Evmos serves on port 8545 out of the box
 	blockchainURL = "http://localhost:8545"
 
@@ -31,30 +28,17 @@ var (
 	// on the simulated backend
 	initialBalance = Ten18
 
+	// Defines the max gas per block for the simulated backend
+	MaxGasPerBlock = uint64(5000000)
+
+	// Defines 10^18 as a big integer
+	Ten18 = big.NewInt(1e18)
+
 	// According to the go-ethereum docs, the chain ID for simulated
 	// backends must be 1337
 	// (https://pkg.go.dev/github.com/ethereum/go-ethereum@v1.10.19/accounts/abi/bind/backends#NewSimulatedBackend).
 	TestChainID = big.NewInt(1337)
-
-	// Defines the max gas per block for the simulated backend
-	MaxGasPerBlock = uint64(5000000)
 )
-
-// TODO: hier noch refactoren mit ClientOpts als Parameter an GetClient()?
-//       Oder geht das wegen den Return-werten nicht?
-// ClientOpts is a struct, that contains the necessary fields to
-// configure the go-ethereum client.
-type ClientOpts struct {
-	Simulated bool
-	URL       string
-	ChainID   *big.Int
-}
-
-// TODO: Backend interface definieren?
-type Backend interface {
-	*backends.SimulatedBackend | *ethclient.Client
-	TransactionReceipt()
-}
 
 // DeployContractAndCommit deploys an instance of the ERC20 token contract
 // and commits the transaction to the simulated backend.
@@ -78,25 +62,18 @@ func DeployContractAndCommit(auth *bind.TransactOpts, client *backends.Simulated
 // It gathers necessary gas price, nonce and estimated gas and assigns
 // these to the fields of the transaction signer, which the function then
 // returns.
-func FillTransactionSignerFields(auth *bind.TransactOpts, client *ethclient.Client, data []byte) (*bind.TransactOpts, error) {
+func FillTransactionSignerFields(auth *bind.TransactOpts, client *ethclient.Client, callMsg ethereum.CallMsg) (*bind.TransactOpts, error) {
 	// Get gas price suggestion from client
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, err
 	}
+	callMsg.GasPrice = gasPrice
 
 	// Get current nonce for deployer address
 	nonce, err := client.PendingNonceAt(context.Background(), auth.From)
 	if err != nil {
 		return nil, err
-	}
-
-	// Define ethereum call message for contract deployment
-	callMsg := ethereum.CallMsg{
-		From:     auth.From,
-		To:       nil,
-		GasPrice: gasPrice,
-		Data:     data,
 	}
 
 	// Estimate gas usage
@@ -137,11 +114,10 @@ func GetClient() (*ethclient.Client, error) {
 // The function returns the client and the transaction signer.
 func GetClientAndTransactionSigner(privKey *ecdsa.PrivateKey) (*ethclient.Client, *bind.TransactOpts, error) {
 	// Connect to blockchain node given a valid URL
-	client, err := ethclient.Dial(blockchainURL)
+	client, err := GetClient()
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Printf("Connected to local Evmos node at %s.\n", blockchainURL)
 
 	// Get chain id from client in order to generate the transaction signer
 	chainID, err := client.ChainID(context.Background())
@@ -182,6 +158,26 @@ func GeneratePrivKeysAndAddresses(n uint64) ([]*ecdsa.PrivateKey, []common.Addre
 	}
 
 	return privKeys, addresses, nil
+}
+
+// GetCallData returns the necessary byte array to fill an ethereum.CallMsg
+// struct's data field. This data is a byte representation of the method
+// call paired with its corresponding arguments.
+func GetCallData(name string, args ...interface{}) ([]byte, error) {
+	// Return the contract ABI in order to define the necessary transaction
+	// data.
+	maltcoinABI, err := maltcoin.MaltcoinMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate the call data for the transfer method using the ABI
+	callData, err := maltcoinABI.Pack("transfer", args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return callData, nil
 }
 
 // GetReceipt converts a given transaction hash in hex string format and

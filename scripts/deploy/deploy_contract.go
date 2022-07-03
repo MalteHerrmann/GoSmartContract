@@ -8,7 +8,7 @@
 //
 // Usage:
 //
-// $ go run deploy_contract.go $PRIVKEY
+//  $ go run deploy_contract.go $PRIVKEY
 //
 package main
 
@@ -19,6 +19,7 @@ import (
 
 	maltcoin "github.com/MalteHerrmann/GoSmartContract/contracts/build"
 	"github.com/MalteHerrmann/GoSmartContract/scripts/util"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -31,9 +32,6 @@ func main() {
 		log.Fatalf("Error while converting the private key to ecdsa: %v", err)
 	}
 
-	// Define data that should be executed
-	callData := common.FromHex(maltcoin.MaltcoinMetaData.Bin)
-
 	// Connect to local EVM and return the client plus a transaction signer,
 	// that can be used to deploy the contract.
 	client, auth, err := util.GetClientAndTransactionSigner(privKey)
@@ -41,8 +39,20 @@ func main() {
 		log.Fatalf("Error while connecting to the local node and getting the transaction signer: %v", err)
 	}
 
+	// Define data that should be executed on the contract (in this case deployment)
+	callData := common.FromHex(maltcoin.MaltcoinMetaData.Bin)
+
+	// Define the ethereum call message, which contains necessary information
+	// to estimate gas consumption in order to fill all transaction signer
+	// fields.
+	callMsg := ethereum.CallMsg{
+		From: auth.From,
+		To:   nil,
+		Data: callData,
+	}
+
 	// Fill transaction signer fields for this specific transaction
-	auth, err = util.FillTransactionSignerFields(auth, client, callData)
+	auth, err = util.FillTransactionSignerFields(auth, client, callMsg)
 	if err != nil {
 		log.Fatalf("Error while filling transaction signer fields: %v", err)
 	}
