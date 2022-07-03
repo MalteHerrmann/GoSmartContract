@@ -1,7 +1,9 @@
 // query_and_transfer.go
 //
-// This script queries the MaltCoin token balance of an account
-// and transfer some tokens to another account
+// This script queries the MaltCoin token contract in order to
+// return the name and symbol of the token, as well as the balances
+// of two accounts. Finally, it transfers a specified amount of
+// MALT between the accounts.
 //
 // Usage:
 //

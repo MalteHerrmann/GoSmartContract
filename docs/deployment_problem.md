@@ -80,3 +80,38 @@ The solution was to estimate the necessary gas limit using `client.EstimateGas(.
 manually setting a value. Interestingly, even when manually setting a value considerably higher than the estimated gas,
 the transaction does not deploy the code correctly, stating it runs out of gas.
 
+The following transaction receipts can be generated with the estimated gas (`1190381`): 
+
+```
+
+-------------
+Transaction:
+0xfcc62270b21c303ddfd39967ee956985906da4ee83af9b343a64c02696375e4a
+
+Blocknumber:       102785
+Contract address:  0x089e91Aae4Bb044DD1477cCf43499e4E4758dEBD
+Status:            1
+Gas used:          1190381
+Logs:              [0x1400013a840]
+Length of code at contract address:  4707
+
+```
+
+As one can see, the status is `1`, the contract code was correctly deployed, and the gas consumption equals the estimated value.
+
+On the other hand, when manually setting the gas limit to `10000000000` the contract deployment fails, while still all of the gas is consumend.
+
+```
+
+-------------
+Transaction:
+0x8a9aa6f668828bc0c04d7951db581bf4f80c3c2ab2dbd79fd08035d21fe44246
+
+Blocknumber:       104960
+Contract address:  0xd268fddeF1dF461A25D4E836e1094D646C0B705e
+Status:            0
+Gas used:          10000000000
+Logs:              []
+Length of code at contract address:  0
+
+```

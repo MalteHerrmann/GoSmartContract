@@ -101,7 +101,7 @@ var _ = Describe("approve:", func() {
 	})
 })
 
-var _ = Describe("balance:", Ordered, func() {
+var _ = Describe("balance:", func() {
 	BeforeEach(func() {
 		s.SetupTest()
 	})

@@ -1,6 +1,16 @@
 # GoSmartContract
 In this repo, an ERC20 token smart contract is deployed to a local Evmos node.
 
+- [Pre-Requisites](#pre-requisites)
+- [Short Summary](#short-summary)
+- [Evmos Node](#evmos-node)
+  - [Configuration](#configuration)
+  - [Running the Node](#running-the-node)
+- [ERC20 Smart Contract](#erc20-smart-contract)
+  - [Compilation](#compilation)
+- [Deployment Using Go-Ethereum](#deployment-using-go-ethereum)
+- [Further Scope](#further-scope)
+
 ## Pre-Requisites
 The following software has to be installed on your machine in order to use the 
 latest version of Evmos (currently v5.0.0):
@@ -47,7 +57,7 @@ For this exercise, a basic ERC20 token contract is deployed to the Evmos node.
 used standard to design fungible tokens, that offer a specific set of methods and
 events.
 In order to create a custom token to deploy, the basic `ERC20` contract from 
-the OpenZeppelin library of smart contracts. <br>
+the OpenZeppelin library of smart contracts is used. <br>
 These can be installed with NPM using `npm install @openzeppelin/contracts`.
 
 ### Compilation
@@ -76,13 +86,7 @@ blockchain.
 To deploy the token contract, an account is needed. During the 
 initialization of the Evmos node with the `./init.sh` script, 
 an initial account was created and supplied with a specific amount 
-of tokens. 
-Manually, an account can be added using the `keys` command.
-
-```shell
- $  evmosd keys add $KEYNAME
-```
-
+of tokens. <br>
 The available accounts can be queried with the following instructions:
 
 ```shell
@@ -109,19 +113,20 @@ local Evmos node.
 
 ```shell
  $ go run github.com/MalteHerrmann/scripts/deploy $PRIVKEY
+```
 
+```
 deploy_contract.go
 -----------------------------------------------------
 This script deploys a contract to a local Evmos node.
 
-Connected to local Evmos node on Port 8545.
-Current nonce:  62
-Estimated gas: 1190369
+Current nonce:  81
+Estimated gas: 1190381
 Suggested gas price: 7
 
 *********** Success ***********
-The token contract was deployed in transaction  0xa5022fff3e376700a3a05a1f48d77b25718e001e2917f44c11c7b81b4e50d2ec
-The contract address is  0x7AE756f54C887c1384e5f085d1B060d109E1B80e
+The token contract was deployed in transaction  0xfcc62270b21c303ddfd39967ee956985906da4ee83af9b343a64c02696375e4a
+The contract address is  0x089e91Aae4Bb044DD1477cCf43499e4E4758dEBD
 ```
 
 Execute `receipt.go` from the `scripts` subfolder to print the 
@@ -133,19 +138,25 @@ has to be given as the first call argument.
 
 ```shell
  $ go run github.com/MalteHerrmann/scripts/receipt $TXHASH
-Connected to local Evmos node at http://localhost:8545.
+```
+
+````
+receipt.go
+-----------------------------------------------------
+This script prints values from the transaction receipt, given a valid tx hash.
+
 
 -------------
 Transaction:
-0xa5022fff3e376700a3a05a1f48d77b25718e001e2917f44c11c7b81b4e50d2ec
+0xfcc62270b21c303ddfd39967ee956985906da4ee83af9b343a64c02696375e4a
 
-Blocknumber:       83917
-Contract address:  0x7AE756f54C887c1384e5f085d1B060d109E1B80e
+Blocknumber:       102785
+Contract address:  0x089e91Aae4Bb044DD1477cCf43499e4E4758dEBD
 Status:            1
-Gas used:          1190369
-Logs:              [0x14000138840]
+Gas used:          1190381
+Logs:              [0x1400013a840]
 Length of code at contract address:  4707
-```
+````
 
 Another script is provided, which can be used to query the token name
 and symbol, and account balances, as well as transfer Maltcoin tokens
@@ -157,30 +168,45 @@ which should be transferred.
 
 ```shell
  $ go run github.com/MalteHerrmann/scripts/query_and_transfer $CONTRACT $PRIVKEY $RECIPIENT $AMOUNT
-
+```
+```
 query_and_transfer.go
 -----------------------------------------------------
 This script loads a Maltcoin smart contract, that's deployed to a
 local Evmos node, queries token balances and transfers tokens between users.
 
-
-Amount to transfer:  10000000
-Connected to local Evmos node on Port 8545.
-Chain ID: 9000
-Maltcoin contract loaded at address:  0x4122088F07d5f505caA67c125Bd89E793FB22274
+Maltcoin contract loaded at address:  0xFdCa4BBB8040A59A7C2f1eF5b59BDa338791fe78
 Token name:  Maltcoin
 Token symbol:  MALT
 
-Before the transaction, the account balances are as follows (in aMALT):
 
-0x193bf98e7999646b74A139DBF2fB3e74d380767A: 10000000000000000000000
-0xcbAe3855CeDB30ce2Dd5766B82A12a1Ff6c32D25: 0
-Tokens transferred in tx with hash:  0x06e38a22f9c1cbf76e51b449cdb33577ebb3bec5c10ee2f0397b696247d89e56
+Account balances pre transaction (in aMALT):
+                  ADDRESS                    |               BALANCE
+---------------------------------------------|----------------------------------
+0x193bf98e7999646b74A139DBF2fB3e74d380767A   | 9999999999999999880000
+0xcbAe3855CeDB30ce2Dd5766B82A12a1Ff6c32D25   | 120000
+
+
+10000 tokens transferred in tx 0xa9f7d8cb3a5a84c8740cd106c5334bdb13d09d4b81087a681fbc3ad2860dc557
+
+
+Account balances post transaction (in aMALT):
+                  ADDRESS                    |               BALANCE
+---------------------------------------------|----------------------------------
+0x193bf98e7999646b74A139DBF2fB3e74d380767A   | 9999999999999999870000
+0xcbAe3855CeDB30ce2Dd5766B82A12a1Ff6c32D25   | 130000
+
 ```
+
+The three scripts all access utility functions, which are defined 
+in `scripts/util/util.go`. 
+This additional file was created, to have a central library of functions
+and variables readily available in order to write further 
+client scripts. 
 
 ## Testing
 
-There are two files for testing purposes:
+There are two commands for testing purposes:
 
 - Unit testing for utility functions in Go:
     ```shell
@@ -191,3 +217,28 @@ There are two files for testing purposes:
     ```shell
     $ go test github.com/MalteHerrmann/tests
     ```
+
+Please bear in mind, that the Solidity contract has 
+to be compiled **before** the tests are run, because 
+they depend on the generated ABI. 
+Also, for some of the tests it is necessary 
+to have a local Evmos node running and 
+to adjust the value of the transaction hash (`testTxHashHex` in `util_test.go`) 
+for testing purposes to a valid one.
+
+Within the test files, there are two distinct approaches to testing to be mentioned:
+
+- `util_test.go` contains [table-driven tests](https://dev.to/boncheff/table-driven-unit-tests-in-go-407b)
+- `maltcoin_bdd_test.go` contains [BDD](https://www.bddtesting.com/what-is-bdd-testing/)-style tests
+
+## Further scope
+
+Additional things, that may be done for the further development of this basic repository:
+
+- Customize the ERC20 token contract, which is just out of the box for now
+- Currently, some ERC20 methods are untested, like `increaseAllowance` or `decreaseAllowance`, so tests for these can be added.
+- Build an interactive command prompt for interactions with a Maltcoin token contract
+- Use Go generics to reduce separate functions for simulated backend and actual client
+- Use events to determine whether a transaction was included in a block instead of waiting some time.
+
+Some remarks, that have occured to me during work on this task, are documented in the [Remarks](./docs/remarks.md) file.

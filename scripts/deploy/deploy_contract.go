@@ -66,7 +66,6 @@ func main() {
 	// Print information into terminal output
 	fmt.Println("\ndeploy_contract.go\n-----------------------------------------------------")
 	fmt.Printf("This script deploys a contract to a local Evmos node.\n\n")
-	fmt.Println("Connected to local Evmos node on Port 8545.")
 	fmt.Println("Current nonce: ", auth.Nonce)
 	fmt.Println("Estimated gas:", auth.GasLimit)
 	fmt.Println("Suggested gas price:", auth.GasPrice)

@@ -34,6 +34,8 @@ func main() {
 		log.Fatalf("Failed to retrieve receipt: %v\n", err)
 	}
 	// Print information to terminal output
+	fmt.Println("\nreceipt.go\n-----------------------------------------------------")
+	fmt.Printf("This script prints values from the transaction receipt, given a valid tx hash.\n\n")
 	fmt.Printf("\n-------------\nTransaction:\n%s\n\n", txHashHex)
 	fmt.Println("Blocknumber:      ", receipt.BlockNumber)
 	fmt.Println("Contract address: ", receipt.ContractAddress)
