@@ -5,6 +5,7 @@
 package maltcoin_tests
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"log"
 	"math/big"
@@ -18,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,6 +33,7 @@ type MaltcoinTestSuite struct {
 	auth            *bind.TransactOpts
 	client          *backends.SimulatedBackend
 	contract        *maltcoin.Maltcoin
+	contractAddress common.Address
 	deployerBalance *big.Int
 	privKeys        []*ecdsa.PrivateKey
 }
@@ -43,7 +46,7 @@ var s *MaltcoinTestSuite
 // to a simulated backend.
 func (suite *MaltcoinTestSuite) SetupTest() {
 	// Generate testing accounts
-	privKeys, addresses, err := util.GeneratePrivKeysAndAddresses(2)
+	privKeys, addresses, err := util.GeneratePrivKeysAndAddresses(3)
 	if err != nil {
 		log.Fatalf("Error generating private key: %v\n", err)
 	}
@@ -53,7 +56,7 @@ func (suite *MaltcoinTestSuite) SetupTest() {
 	// require.NoError(s.T(), err, "Error getting client and transaction signer")
 
 	// Deploy contract
-	_, _, contract, _ := util.DeployContractAndCommit(auth, client)
+	contractAddress, _, contract, _ := util.DeployContractAndCommit(auth, client)
 	// require.NoError(s.T(), err, "Could not deploy contract")
 
 	// Assign to testing suite
@@ -61,6 +64,7 @@ func (suite *MaltcoinTestSuite) SetupTest() {
 	suite.auth = auth
 	suite.client = client
 	suite.contract = contract
+	suite.contractAddress = contractAddress
 	suite.deployerBalance = new(big.Int).Mul(big.NewInt(10000), util.Ten18) // 10000 MALT
 	suite.privKeys = privKeys
 }
@@ -74,7 +78,7 @@ func TestMaltcoin(t *testing.T) {
 	RunSpecs(t, "Maltcoin Suite")
 }
 
-var _ = Describe("Token approve", func() {
+var _ = Describe("approve:", func() {
 	BeforeEach(func() {
 		s.SetupTest()
 	})
@@ -97,7 +101,7 @@ var _ = Describe("Token approve", func() {
 	})
 })
 
-var _ = Describe("Token balance", Ordered, func() {
+var _ = Describe("balance:", Ordered, func() {
 	BeforeEach(func() {
 		s.SetupTest()
 	})
@@ -109,6 +113,7 @@ var _ = Describe("Token balance", Ordered, func() {
 			Expect(balance.Cmp(s.deployerBalance)).To(Equal(0))
 		})
 	})
+
 	Context("Other accounts' balances after deployment", func() {
 		It("should be 0 MALT", func() {
 			balance, err := s.contract.BalanceOf(nil, s.addresses[1])
@@ -118,7 +123,7 @@ var _ = Describe("Token balance", Ordered, func() {
 	})
 })
 
-var _ = Describe("Token transfer", func() {
+var _ = Describe("transfer:", func() {
 	BeforeEach(func() {
 		s.SetupTest()
 	})
@@ -170,6 +175,109 @@ var _ = Describe("Token transfer", func() {
 		It("should not have increased the recipient balance", func() {
 			recipientBalance, err := s.contract.BalanceOf(nil, s.addresses[1])
 			Expect(recipientBalance.Cmp(big.NewInt(0)), err).To(Equal(0))
+		})
+	})
+})
+
+var _ = Describe("transferFrom:", func() {
+	BeforeEach(func() {
+		s.SetupTest()
+
+		// In order to transfer from, the sender must have sufficient Evmos
+		// tokens to pay the gas cost of the transfer. Hence, before the
+		// tests, an appropriate amount of Evmos is sent to the sender address,
+		// which upon genesis of the simulated backend, does not hold any.
+		//
+		// Define transaction
+		tx := types.NewTransaction(1, s.addresses[1], big.NewInt(1e15), util.MaxGasPerBlock, big.NewInt(817704169), nil)
+
+		// Sign the transaction with the private key of the deployer account
+		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(util.TestChainID), s.privKeys[0])
+		Expect(err).To(BeNil())
+
+		// Send Evmos to account1 for gas usage.
+		err = s.client.SendTransaction(context.Background(), signedTx)
+		Expect(err).To(BeNil())
+
+		// Commit transaction
+		s.client.Commit()
+	})
+
+	Context("When no approval was given", func() {
+		It("should not be able to transfer tokens from the sender address", func() {
+			// Define transferred amount
+			amount := util.Ten18
+
+			// Transfer tokens from account 1 to account 2
+			_, err := s.contract.TransferFrom(s.auth, s.addresses[1], s.addresses[2], amount)
+			Expect(err).Error()
+
+			// Commit transaction
+			s.client.Commit()
+		})
+	})
+
+	Describe("When an amount of tokens is approved to be sent", func() {
+		//Define transferred amount
+		amount := util.Ten18
+
+		BeforeEach(func() {
+			// Approve tokens from deployer account to sender account
+			_, err := s.contract.Approve(s.auth, s.addresses[1], amount)
+			Expect(err).To(BeNil())
+
+			// Commit transaction
+			s.client.Commit()
+		})
+
+		Context("and the approver has sufficient tokens in his balance", func() {
+			BeforeEach(func() {
+				// Define transactor for sender account
+				auth, err := bind.NewKeyedTransactorWithChainID(s.privKeys[1], util.TestChainID)
+				Expect(err).To(BeNil())
+
+				// Transfer tokens from sender account to recipient
+				_, err = s.contract.TransferFrom(auth, s.addresses[0], s.addresses[2], amount)
+				Expect(err).To(BeNil())
+
+				// Commit transaction
+				s.client.Commit()
+			})
+
+			It("should have deducted the transferred amount from the approver's balance", func() {
+				approverBalance, err := s.contract.BalanceOf(nil, s.addresses[0])
+				Expect(approverBalance.Cmp(new(big.Int).Sub(s.deployerBalance, amount)), err).To(Equal(0))
+			})
+
+			It("should have increased recipient's balance by the transferred amount", func() {
+				recipientBalance, err := s.contract.BalanceOf(nil, s.addresses[2])
+				Expect(recipientBalance.Cmp(amount), err).To(Equal(0))
+			})
+		})
+
+		Context("and the approver does not have sufficient tokens in his balance", func() {
+			BeforeEach(func() {
+				// Define transactor for sender account
+				auth, err := bind.NewKeyedTransactorWithChainID(s.privKeys[1], util.TestChainID)
+				Expect(err).To(BeNil())
+
+				// Transfer twice the approved tokens from sender account to recipient
+				_, err = s.contract.TransferFrom(auth, s.addresses[0], s.addresses[2], new(big.Int).Mul(big.NewInt(2), amount))
+				Expect(err).Error()
+
+				// Commit transaction
+				s.client.Commit()
+			})
+
+			It("should not have deducted the transferred amount from the approver's balance", func() {
+				approverBalance, err := s.contract.BalanceOf(nil, s.addresses[0])
+				Expect(approverBalance.Cmp(s.deployerBalance), err).To(Equal(0))
+			})
+
+			It("should not have increased recipient's balance by the transferred amount", func() {
+				recipientBalance, err := s.contract.BalanceOf(nil, s.addresses[2])
+				Expect(recipientBalance.Cmp(big.NewInt(0)), err).To(Equal(0))
+			})
 		})
 	})
 })
