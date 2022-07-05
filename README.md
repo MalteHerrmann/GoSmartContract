@@ -210,12 +210,12 @@ There are two commands for testing purposes:
 
 - Unit testing for utility functions in Go:
     ```shell
-    $ go test github.com/MalteHerrmann/scripts/util
+    $ go test github.com/MalteHerrmann/GoSmartContract/scripts/util
     ```
 
 - Testing the ERC20 token
     ```shell
-    $ go test github.com/MalteHerrmann/tests
+    $ go test github.com/MalteHerrmann/GoSmartContract/tests
     ```
 
 Please bear in mind, that the Solidity contract has 
