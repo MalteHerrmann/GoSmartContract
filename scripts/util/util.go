@@ -40,6 +40,12 @@ var (
 	TestChainID = big.NewInt(1337)
 )
 
+// ReceiptBackend defines an interface, which can be used to get the transaction receipt
+// for a given ethclient or simulated backend.
+type ReceiptBackend interface {
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+}
+
 // DeployContractAndCommit deploys an instance of the ERC20 token contract
 // and commits the transaction to the simulated backend.
 // The function returns the contract address, the transaction, and an
@@ -182,29 +188,12 @@ func GetCallData(name string, args ...interface{}) ([]byte, error) {
 
 // GetReceipt converts a given transaction hash in hex string format and
 // returns the transaction receipt, if the hash is valid.
-// TODO: Try generics to join this function with GetReceiptSimulated
-// func GetReceipt[backend *ethclient.Client | *backends.SimulatedBackend](client backend, txHashHex string) (*types.Receipt, error) {
-func GetReceipt(client *ethclient.Client, txHashHex string) (*types.Receipt, error) {
+func GetReceipt(backend ReceiptBackend, txHashHex string) (*types.Receipt, error) {
 	// Convert transaction hash, for which the receipt should be returned
 	txHash := common.HexToHash(txHashHex)
 
 	// Get transaction receipt
-	receipt, err := client.TransactionReceipt(context.Background(), txHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return receipt, nil
-}
-
-// GetReceiptSimulated converts a given transaction hash in hex string format and
-// returns the transaction receipt, if the hash is valid.
-func GetReceiptSimulated(client *backends.SimulatedBackend, txHashHex string) (*types.Receipt, error) {
-	// Convert transaction hash, for which the receipt should be returned
-	txHash := common.HexToHash(txHashHex)
-
-	// Get transaction receipt
-	receipt, err := client.TransactionReceipt(context.Background(), txHash)
+	receipt, err := backend.TransactionReceipt(context.Background(), txHash)
 	if err != nil {
 		return nil, err
 	}

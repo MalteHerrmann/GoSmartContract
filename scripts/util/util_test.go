@@ -234,7 +234,7 @@ func TestGetReceiptSimulated(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Get receipt
-			receipt, err := GetReceiptSimulated(client, tc.txHash)
+			receipt, err := GetReceipt(client, tc.txHash)
 			if tc.expErr {
 				require.Error(t, err, "Getting receipt should raise an error")
 			} else {
