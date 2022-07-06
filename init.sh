@@ -34,7 +34,7 @@ solc --bin contracts/Maltcoin.sol -o contracts/build
 abigen --abi=contracts/build/Maltcoin.abi --bin=contracts/build/Maltcoin.bin --pkg=maltcoin --out=contracts/build/Maltcoin.go
 
 # Run deployment function
-go run scripts/deploy/deploy_contract.go $SENDER_PRIVKEY > tmp.txt
+go run $DEPLOY $SENDER_PRIVKEY > tmp.txt
 cat tmp.txt
 TXHASH=$(cat tmp.txt | grep "transaction" | grep -o "0x[a-z0-9]*")
 CONTRACT=$(cat tmp.txt | grep 'contract address' | grep -o '0x[0-9a-zA-Z]*')
