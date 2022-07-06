@@ -167,7 +167,7 @@ private key `$PRIVKEY`, the `$RECIPIENT` address, and a token `$AMOUNT`,
 which should be transferred.
 
 ```shell
- $ go run github.com/MalteHerrmann/GoSmartContract/scripts/query_and_transfer $CONTRACT $PRIVKEY $RECIPIENT $AMOUNT
+ $ go run github.com/MalteHerrmann/GoSmartContract/scripts/transfer $CONTRACT $PRIVKEY $RECIPIENT $AMOUNT
 ```
 ```
 query_and_transfer.go
